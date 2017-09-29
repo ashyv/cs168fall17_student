@@ -30,7 +30,7 @@ class LearningSwitch(api.Entity):
         You probably want to do something in this method.
 
         """
-        pass
+        self.map = {}
 
     def handle_link_down(self, port):
         """
@@ -40,7 +40,9 @@ class LearningSwitch(api.Entity):
         valid here.
 
         """
-        pass
+        for dest in self.map.keys():
+            if self.map[dest] == port:
+                del self.map[dest]
 
     def handle_rx(self, packet, in_port):
         """
@@ -58,9 +60,15 @@ class LearningSwitch(api.Entity):
         # But it's up to you to implement that.  For now, we just implement a
         # simple hub.
 
+        self.map[packet.src] = in_port
+
         if isinstance(packet, basics.HostDiscoveryPacket):
             # Don't forward discovery messages
             return
 
-        # Flood out all ports except the input port
-        self.send(packet, in_port, flood=True)
+        if packet.dst in self.map.keys():
+            self.send(packet, self.map[packet.dst])
+
+        else:
+            # Flood out all ports except the input port
+            self.send(packet, in_port, flood=True)
